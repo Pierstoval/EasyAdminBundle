@@ -186,7 +186,15 @@ class AdminController extends Controller
         $easyadmin = $this->request->attributes->get('easyadmin');
         $entity = $easyadmin['item'];
 
+        $dto = $this->entity['edit']['dto_class']
+            ? $this->get('easyadmin.dto_factory')->createEntityDTO($this->entity['name'], 'edit', $entity)
+            : null;
+
         if ($this->request->isXmlHttpRequest() && $property = $this->request->query->get('property')) {
+            if ($dto) {
+                throw new \RuntimeException('Updating a single property is not supported when using a DTO.');
+            }
+
             $newValue = 'true' === \mb_strtolower($this->request->query->get('newValue'));
             $fieldsMetadata = $this->entity['list']['fields'];
 
@@ -194,7 +202,7 @@ class AdminController extends Controller
                 throw new \RuntimeException(\sprintf('The type of the "%s" property is not "toggle".', $property));
             }
 
-            $this->updateEntityProperty($entity, $property, $newValue);
+            $this->updateEntityProperty($entity, $property, $newValue, $dto);
 
             // cast to integer instead of string to avoid sending empty responses for 'false'
             return new Response((int) $newValue);
@@ -202,11 +210,17 @@ class AdminController extends Controller
 
         $fields = $this->entity['edit']['fields'];
 
-        $editForm = $this->executeDynamicMethod('create<EntityName>EditForm', [$entity, $fields]);
+        $editForm = $this->executeDynamicMethod('create<EntityName>EditForm', [$dto ?: $entity, $fields]);
         $deleteForm = $this->createDeleteForm($this->entity['name'], $id);
 
         $editForm->handleRequest($this->request);
         if ($editForm->isSubmitted() && $editForm->isValid()) {
+            if ($dto) {
+                $callable = $this->entity['edit']['dto_entity_method'];
+
+                $entity->$callable($dto);
+            }
+
             $this->dispatch(EasyAdminEvents::PRE_UPDATE, ['entity' => $entity]);
             $this->executeDynamicMethod('update<EntityName>Entity', [$entity, $editForm]);
             $this->dispatch(EasyAdminEvents::POST_UPDATE, ['entity' => $entity]);
@@ -266,18 +280,32 @@ class AdminController extends Controller
     {
         $this->dispatch(EasyAdminEvents::PRE_NEW);
 
-        $entity = $this->executeDynamicMethod('createNew<EntityName>Entity');
+        $dto = $this->entity['new']['dto_class']
+            ? $this->get('easyadmin.dto_factory')->createEntityDTO($this->entity['name'], 'new')
+            : null;
+
+        // If using a DTO, entity will be created after form is valid, with the "dto_entity_method" option.
+        $entity = $dto ? null : $this->executeDynamicMethod('createNew<EntityName>Entity');
 
         $easyadmin = $this->request->attributes->get('easyadmin');
-        $easyadmin['item'] = $entity;
+        $easyadmin['item'] = $dto ?: $entity;
         $this->request->attributes->set('easyadmin', $easyadmin);
 
         $fields = $this->entity['new']['fields'];
 
-        $newForm = $this->executeDynamicMethod('create<EntityName>NewForm', [$entity, $fields]);
+        $newForm = $this->executeDynamicMethod('create<EntityName>NewForm', [$dto ?: $entity, $fields]);
 
         $newForm->handleRequest($this->request);
         if ($newForm->isSubmitted() && $newForm->isValid()) {
+            if ($dto) {
+                $callable = [
+                    $this->entity['class'],
+                    $this->entity['new']['dto_entity_method']
+                ];
+
+                $entity = $callable($dto);
+            }
+
             $this->dispatch(EasyAdminEvents::PRE_PERSIST, ['entity' => $entity]);
             $this->executeDynamicMethod('persist<EntityName>Entity', [$entity, $newForm]);
             $this->dispatch(EasyAdminEvents::POST_PERSIST, ['entity' => $entity]);
@@ -422,9 +450,9 @@ class AdminController extends Controller
      */
     protected function createNewEntity()
     {
-        $entityFullyQualifiedClassName = $this->entity['class'];
+        $objectClass = $this->entity['class'];
 
-        return new $entityFullyQualifiedClassName();
+        return new $objectClass();
     }
 
     /**

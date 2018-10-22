@@ -29,6 +29,11 @@
         <service id="easyadmin.paginator" class="EasyCorp\Bundle\EasyAdminBundle\Search\Paginator" public="true">
         </service>
 
+        <service id="easyadmin.dto_factory" class="EasyCorp\Bundle\EasyAdminBundle\Form\DTO\DTOFactory" public="true">
+            <argument type="service" id="easyadmin.config.manager" />
+            <argument type="service" id="service_container" />
+        </service>
+
         <service id="easyadmin.router" class="EasyCorp\Bundle\EasyAdminBundle\Router\EasyAdminRouter" public="true">
             <argument id="easyadmin.config.manager" type="service" />
             <argument id="router" type="service" />
