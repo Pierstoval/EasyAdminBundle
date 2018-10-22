@@ -138,6 +138,10 @@ class EasyAdminFormType extends AbstractType
                     $entity = $options['entity'];
                     $entityConfig = $configManager->getEntityConfig($entity);
 
+                    if ($class = $entityConfig[$options['view']]['dto_class']) {
+                        return $class;
+                    }
+
                     return $entityConfig['class'];
                 },
             ])
