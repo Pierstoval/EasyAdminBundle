@@ -137,11 +137,19 @@ class DTOFactoryTest extends TestCase
         static::assertInstanceOf(EditProductDTO::class, $dto);
     }
 
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Could not find a way to create a DTO for entity Product with configured factory inexistent_class::inexistent_method.
+     */
     public function testNoFactoryAvailableToCreateDTO()
     {
         $container = $this->createMock(ContainerInterface::class);
 
-        $factory = new DTOFactory($this->getConfigManager([]), $container);
+        $factory = new DTOFactory($this->getConfigManager([
+            'new' => [
+                'dto_factory' => 'inexistent_class::inexistent_method',
+            ],
+        ]), $container);
 
         $factory->createEntityDTO('Product', 'new');
     }
