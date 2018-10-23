@@ -1,7 +1,7 @@
 Using DTOs in EasyAdmin
 =======================
 
-DTO (Data Transfer Object) are considered as a good practice by many developers as a way to
+DTOs (Data Transfer Object) are considered a good practice by many developers as a way to
 decouple your database data (the entities) from your domain logic.
 
 This is especially true when using the ``symfony/form`` component, because
@@ -48,7 +48,7 @@ Let's consider a ``User`` entity:
         // ...
     }
 
-As Doctrine do not use any getter nor setter to hydrate our objects, we do not
+As Doctrine does not use any getter nor setter to hydrate our objects, we do not
 need any.
 
 If we use DTOs, our entity will be populated by the DTO itself when submitting
@@ -83,7 +83,7 @@ Here is an example of such methods for our ``User`` entity:
     }
 
 Here, we have a nice example of a **static constructor** and a **mutator**,
-both using an object named a DTO.
+both using an object called a DTO.
 
 Create your first DTO
 ---------------------
@@ -206,7 +206,7 @@ EasyAdmin to use your DTOs:
                         - property: resetPassword
                           type: checkbox
 
-And voilà! Nothing more to do, EasyAdmin will use your configuration to create
+And *voilà*! Nothing more to do, EasyAdmin will use your configuration to create
 your DTOs in the right situation, and create or update your entities properly.
 
 DTO configuration options
