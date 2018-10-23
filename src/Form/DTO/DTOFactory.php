@@ -2,7 +2,7 @@
 
 namespace EasyCorp\Bundle\EasyAdminBundle\Form\DTO;
 
-use EasyCorp\Bundle\EasyAdminBundle\Configuration\ConfigManagerInterface;
+use EasyCorp\Bundle\EasyAdminBundle\Configuration\ConfigManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class DTOFactory
@@ -10,7 +10,7 @@ class DTOFactory
     private $configManager;
     private $container;
 
-    public function __construct(ConfigManagerInterface $configManager, ContainerInterface $container)
+    public function __construct(ConfigManager $configManager, ContainerInterface $container)
     {
         $this->configManager = $configManager;
         $this->container = $container;

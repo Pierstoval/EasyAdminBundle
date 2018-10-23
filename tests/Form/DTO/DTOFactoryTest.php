@@ -5,7 +5,7 @@ namespace EasyCorp\Bundle\EasyAdminBundle\Tests\Form\DTO;
 use AppTestBundle\Entity\UnitTests\Product;
 use AppTestBundle\Form\DTO\EditProductDTO;
 use AppTestBundle\Form\DTO\NewProductDTO;
-use EasyCorp\Bundle\EasyAdminBundle\Configuration\ConfigManagerInterface;
+use EasyCorp\Bundle\EasyAdminBundle\Configuration\ConfigManager;
 use EasyCorp\Bundle\EasyAdminBundle\Form\DTO\DTOFactory;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -144,9 +144,9 @@ class DTOFactoryTest extends TestCase
         $factory->createEntityDTO('Product', 'new');
     }
 
-    private function getConfigManager(array $entityConfig = []): ConfigManagerInterface
+    private function getConfigManager(array $entityConfig = []): ConfigManager
     {
-        $configManager = $this->createMock(ConfigManagerInterface::class);
+        $configManager = $this->createMock(ConfigManager::class);
 
         $configManager
             ->expects($this->once())
