@@ -142,7 +142,7 @@ class PropertyConfigPass implements ConfigPassInterface
             foreach (['edit', 'list', 'new', 'search', 'show'] as $view) {
                 $originalViewConfig = $backendConfig['entities'][$entityName][$view];
 
-                if (\in_array($view, ['edit', 'new']) && $entityConfig[$view]['dto_class'] &&  0 === \count($entityConfig[$view]['fields'])) {
+                if (\in_array($view, ['edit', 'new']) && $entityConfig[$view]['dto_class'] && 0 === \count($entityConfig[$view]['fields'])) {
                     $entityConfig[$view]['fields'] = $this->processDefaultFieldsForDTOs($entityConfig, $view);
                 }
 
@@ -366,10 +366,10 @@ class PropertyConfigPass implements ConfigPassInterface
             $params = \array_merge($this->defaultEntityFieldConfig, $this->defaultVirtualFieldMetadata, $params);
 
             // Remove forced virtual fields
-            if ($params['columnName'] === 'virtual') {
+            if ('virtual' === $params['columnName']) {
                 unset($params['columnName']);
             }
-            if ($params['fieldName'] === 'virtual') {
+            if ('virtual' === $params['fieldName']) {
                 unset($params['columnName']);
             }
 

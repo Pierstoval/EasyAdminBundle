@@ -184,6 +184,7 @@ class StaticDTOFactoryTest
     {
         return new NewProductDTO();
     }
+
     public static function createEditDTO(Product $product)
     {
         return new EditProductDTO($product);

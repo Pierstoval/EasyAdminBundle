@@ -300,7 +300,7 @@ class AdminController extends Controller
             if ($dto) {
                 $callable = [
                     $this->entity['class'],
-                    $this->entity['new']['dto_entity_method']
+                    $this->entity['new']['dto_entity_method'],
                 ];
 
                 $entity = $callable($dto);

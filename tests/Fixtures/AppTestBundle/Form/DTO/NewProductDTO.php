@@ -17,7 +17,7 @@ class NewProductDTO
     {
         $this->skud = $skud;
     }
-    
+
     public function getTitle(): ?string
     {
         return $this->title;

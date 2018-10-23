@@ -140,7 +140,7 @@ class NormalizerConfigPass implements ConfigPassInterface
 
             foreach (['edit', 'new'] as $action) {
                 $config = $entityConfig[$action];
-                if ($config['dto_class']  && !\class_exists($config['dto_class'] )) {
+                if ($config['dto_class'] && !\class_exists($config['dto_class'] )) {
                     throw new \InvalidArgumentException(sprintf('The "%s" class defined in the "dto_class" option of the "%s" entity does not exist.', $config['dto_class'], $entityName));
                 }
 
@@ -151,7 +151,7 @@ class NormalizerConfigPass implements ConfigPassInterface
                     ));
                 }
 
-                if ($config['dto_class'] && $config['dto_factory']&& '__construct' !== $config['dto_factory']) {
+                if ($config['dto_class'] && $config['dto_factory'] && '__construct' !== $config['dto_factory']) {
 
                     $refl = new \ReflectionMethod($config['dto_class'], $config['dto_factory']);
 
