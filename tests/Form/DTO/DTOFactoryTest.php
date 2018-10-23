@@ -8,7 +8,9 @@ use AppTestBundle\Form\DTO\NewProductDTO;
 use EasyCorp\Bundle\EasyAdminBundle\Configuration\ConfigManager;
 use EasyCorp\Bundle\EasyAdminBundle\Form\DTO\DTOFactory;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\PropertyAccess\PropertyAccessor;
 
 class DTOFactoryTest extends TestCase
 {
@@ -146,30 +148,35 @@ class DTOFactoryTest extends TestCase
 
     private function getConfigManager(array $entityConfig = []): ConfigManager
     {
-        $configManager = $this->createMock(ConfigManager::class);
+        $processedConfig = [
+            'entities' => [
+                'Product' => array_replace_recursive(
+                    [
+                        'class' => Product::class,
+                        'new' => [
+                            'fields' => [],
+                            'dto_class' => NewProductDTO::class,
+                            'dto_factory' => null,
+                            'dto_entity_method' => null,
+                        ],
+                        'edit' => [
+                            'dto_class' => EditProductDTO::class,
+                            'dto_factory' => null,
+                            'dto_entity_method' => null,
+                        ],
+                    ], $entityConfig
+                ),
+            ],
+        ];
 
-        $configManager
-            ->expects($this->once())
-            ->method('getEntityConfig')
-            ->with('Product')
-            ->willReturn(array_replace_recursive(
-                [
-                    'class' => Product::class,
-                    'new' => [
-                        'fields' => [],
-                        'dto_class' => NewProductDTO::class,
-                        'dto_factory' => null,
-                        'dto_entity_method' => null,
-                    ],
-                    'edit' => [
-                        'dto_class' => EditProductDTO::class,
-                        'dto_factory' => null,
-                        'dto_entity_method' => null,
-                    ],
-                ], $entityConfig
-            ));
+        $cache = new ArrayAdapter();
 
-        return $configManager;
+        // the name must be like the private const ConfigManager::CACHE_KEY
+        $cacheItem = $cache->getItem('easyadmin.processed_config');
+        $cacheItem->set($processedConfig);
+        $cache->save($cacheItem);
+
+        return new ConfigManager([], false, new PropertyAccessor(), $cache);
     }
 }
 
