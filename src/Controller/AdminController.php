@@ -202,7 +202,7 @@ class AdminController extends Controller
                 throw new \RuntimeException(\sprintf('The type of the "%s" property is not "toggle".', $property));
             }
 
-            $this->updateEntityProperty($entity, $property, $newValue, $dto);
+            $this->updateEntityProperty($entity, $property, $newValue);
 
             // cast to integer instead of string to avoid sending empty responses for 'false'
             return new Response((int) $newValue);
