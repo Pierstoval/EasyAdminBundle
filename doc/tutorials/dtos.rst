@@ -4,7 +4,7 @@ Using DTOs in EasyAdmin
 DTOs (Data Transfer Object) are considered a good practice by many developers as a way to
 decouple your database data (the entities) from your domain logic.
 
-This is especially true when using the ``symfony/form`` component, because
+This is especially true when using the Symfony Form component, because
 it updates the entity's data and therefore can lead to an invalid state.
 As invalid states can be the source of inconsistencies, database corruption,
 if one single ``$entityManager->flush()`` is forgotten in the code, EasyAdmin
@@ -213,17 +213,17 @@ DTO configuration options
 -------------------------
 
 * ``dto_class``: This is the first thing you have to define if you want to use
-DTOs. It will tell EasyAdmin to separate the DTO (that will be injected in the
-form) and the Entity (that will be used for persist & flush calls on the ORM).
+  DTOs. It will tell EasyAdmin to separate the DTO (that will be injected in the
+  form) and the Entity (that will be used for persist & flush calls on the ORM).
 * ``dto_factory``: This is the **method** that will be used to create the DTO.
-By default, ``null`` will use the native constructor, leading to code like
-``$dto = new $dtoClass()``.
-However, you can also use static factories, like ``'MyDTOFactory::createDTO'``.
-With the same syntax, you can also use **services** to create your DTOs, like
-``my_service_in_symfony_container::method``. If you want EasyAdmin to retrieve
-a DTO factory from the container, **it must be a public service** (be careful to
-check this, as services are private by default since Symfony 4.0).
+  By default, ``null`` will use the native constructor, leading to code like
+  ``$dto = new $dtoClass()``.
+  However, you can also use static factories, like ``'MyDTOFactory::createDTO'``.
+  With the same syntax, you can also use **services** to create your DTOs, like
+  ``my_service_in_symfony_container::method``. If you want EasyAdmin to retrieve
+  a DTO factory from the container, **it must be a public service** (be careful to
+  check this, as services are private by default since Symfony 4.0).
 * ``dto_entity_method``: This is the **method** that will be used by EasyAdmin
-when the form is **submitted and valid**, on the **entity**. This can execute
-instructions like ``$entity->$method($dto);``. This method is mandatory if you
-want to use DTOs.
+  when the form is **submitted and valid**, on the **entity**. This can execute
+  instructions like ``$entity->$method($dto);``. This method is mandatory if you
+  want to use DTOs.
