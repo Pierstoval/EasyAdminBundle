@@ -7,6 +7,7 @@ use AppTestBundle\Form\DTO\EditProductDTO;
 use AppTestBundle\Form\DTO\NewProductDTO;
 use EasyCorp\Bundle\EasyAdminBundle\Configuration\ConfigManager;
 use EasyCorp\Bundle\EasyAdminBundle\Form\DTO\DTOFactory;
+use EasyCorp\Bundle\EasyAdminBundle\Form\DTO\ObjectFactoryInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -71,31 +72,24 @@ class DTOFactoryTest extends TestCase
 
     public function testNewDTOCreationFromContainer()
     {
-        $serviceFactory = $this->createMock(TestFactoryInterface::class);
+        $serviceFactory = $this->createMock(ObjectFactoryInterface::class);
         $serviceFactory
             ->expects($this->once())
-            ->method('factory')
+            ->method('getName')
             ->with()
+            ->willReturn('test_factory')
+        ;
+        $serviceFactory
+            ->expects($this->once())
+            ->method('createDTO')
+            ->with(EditProductDTO::class, 'new', null)
             ->willReturn(new NewProductDTO())
         ;
 
-        $container = $this->createMock(ContainerInterface::class);
-        $container
-            ->expects($this->once())
-            ->method('has')
-            ->with('test_service_factory')
-            ->willReturn(true)
-        ;
-        $container
-            ->expects($this->once())
-            ->method('get')
-            ->with('test_service_factory')
-            ->willReturn($serviceFactory)
-        ;
+        $configParams = ['new' => ['dto_class' => EditProductDTO::class, 'dto_factory' => 'test_factory']];
 
-        $configParams = ['new' => ['dto_class' => NewProductDTO::class, 'dto_factory' => 'test_service_factory::factory']];
-
-        $factory = new DTOFactory($this->getConfigManager($configParams), $container);
+        $factory = new DTOFactory($this->getConfigManager($configParams));
+        $factory->addFactory($serviceFactory);
 
         $dto = $factory->createEntityDTO('Product', 'new');
 
@@ -106,31 +100,24 @@ class DTOFactoryTest extends TestCase
     {
         $defaultData = new Product();
 
-        $serviceFactory = $this->createMock(TestFactoryInterface::class);
+        $serviceFactory = $this->createMock(ObjectFactoryInterface::class);
         $serviceFactory
             ->expects($this->once())
-            ->method('factory')
-            ->with($defaultData)
+            ->method('getName')
+            ->with()
+            ->willReturn('test_factory')
+        ;
+        $serviceFactory
+            ->expects($this->once())
+            ->method('createDTO')
+            ->with(EditProductDTO::class, 'edit', $defaultData)
             ->willReturn(new EditProductDTO($defaultData))
         ;
 
-        $container = $this->createMock(ContainerInterface::class);
-        $container
-            ->expects($this->once())
-            ->method('has')
-            ->with('test_service_factory')
-            ->willReturn(true)
-        ;
-        $container
-            ->expects($this->once())
-            ->method('get')
-            ->with('test_service_factory')
-            ->willReturn($serviceFactory)
-        ;
+        $configParams = ['edit' => ['dto_class' => EditProductDTO::class, 'dto_factory' => 'test_factory']];
 
-        $configParams = ['edit' => ['dto_class' => EditProductDTO::class, 'dto_factory' => 'test_service_factory::factory']];
-
-        $factory = new DTOFactory($this->getConfigManager($configParams), $container);
+        $factory = new DTOFactory($this->getConfigManager($configParams));
+        $factory->addFactory($serviceFactory);
 
         $dto = $factory->createEntityDTO('Product', 'edit', $defaultData);
 
@@ -186,11 +173,6 @@ class DTOFactoryTest extends TestCase
 
         return new ConfigManager([], false, new PropertyAccessor(), $cache);
     }
-}
-
-interface TestFactoryInterface
-{
-    public function factory();
 }
 
 class StaticDTOFactoryTest

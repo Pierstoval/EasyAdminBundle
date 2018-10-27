@@ -215,15 +215,57 @@ DTO configuration options
 * ``dto_class``: This is the first thing you have to define if you want to use
   DTOs. It will tell EasyAdmin to separate the DTO (that will be injected in the
   form) and the Entity (that will be used for persist & flush calls on the ORM).
-* ``dto_factory``: This is the **method** that will be used to create the DTO.
-  By default, ``null`` will use the native constructor, leading to code like
-  ``$dto = new $dtoClass()``.
-  However, you can also use static factories, like ``'MyDTOFactory::createDTO'``.
-  With the same syntax, you can also use **services** to create your DTOs, like
-  ``my_service_in_symfony_container::method``. If you want EasyAdmin to retrieve
-  a DTO factory from the container, **it must be a public service** (be careful to
-  check this, as services are private by default since Symfony 4.0).
+* ``dto_factory``: This option can be of three types:
+  * ``null`` (default) will use the native constructor, leading to code like
+    ``$dto = new $dtoClass()``. You could also explicitly set ``__construct`` as value,
+    which leads to the exact same behavior but is more explicit.
+  * The **static method name** that will be used to create the DTO, like
+    ``$dtoClass:$dtoFactory()``.
+  * A **static factory** from another class like ``'MyDTOFactory::createDTO'``.
+  * The name of an object factory registered as a service (see below an example of object
+    factory).
 * ``dto_entity_method``: This is the **method** that will be used by EasyAdmin
   when the form is **submitted and valid**, on the **entity**. This can execute
   instructions like ``$entity->$method($dto);``. This method is mandatory if you
   want to use DTOs.
+
+Create custom object factories
+------------------------------
+
+Thanks to the ``EasyCorp\Bundle\EasyAdminBundle\Form\DTO\ObjectFactoryInterface``, you can
+create services that will create your DTOs.
+
+Here is an example of such factory:
+
+.. code-block:: php
+
+    <?php
+
+    use EasyCorp\Bundle\EasyAdminBundle\Form\DTO\ObjectFactoryInterface;
+
+    class CustomObjectFactory implements ObjectFactoryInterface
+    {
+        public function getName(): string
+        {
+            return 'custom_factory';
+        }
+
+        public function createDTO(string $class, string $view, $defaultData = null)
+        {
+            // Your logic to create the DTO.
+        }
+    }
+
+Used with a configuration similar to this:
+
+.. code-block:: yaml
+
+    easy_admin:
+        entities:
+            User:
+                class: App\Entity\User
+
+                edit:
+                    # Here, the custom factory is used, and the name is the return of CustomObjectFactory::getName().
+                    dto_factory: custom_factory
+                    dto_class: App\Form\DTO\ExistingUserAdminDTO
