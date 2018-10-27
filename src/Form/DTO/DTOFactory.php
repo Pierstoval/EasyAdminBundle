@@ -4,7 +4,7 @@ namespace EasyCorp\Bundle\EasyAdminBundle\Form\DTO;
 
 use EasyCorp\Bundle\EasyAdminBundle\Configuration\ConfigManager;
 
-class DTOFactory
+final class DTOFactory
 {
     private $configManager;
 
@@ -30,6 +30,11 @@ class DTOFactory
         }
 
         $this->factories[$factoryName] = $objectFactory;
+    }
+
+    public function hasFactory(string $name): bool
+    {
+        return \array_key_exists($name, $this->factories);
     }
 
     public function createEntityDTO(string $entityName, string $view, $entityObject = null)

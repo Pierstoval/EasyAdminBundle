@@ -152,6 +152,10 @@ class NormalizerConfigPass implements ConfigPassInterface
                 }
 
                 if ($config['dto_class'] && $config['dto_factory'] && '__construct' !== $config['dto_factory']) {
+                    if ($this->container->get('easyadmin.dto_factory')->hasFactory($config['dto_factory'])) {
+                        // Don't make any check if factory exists in the container, because it's the first one that's used
+                        continue;
+                    }
 
                     try {
                         $refl = new \ReflectionMethod($config['dto_class'], $config['dto_factory']);
