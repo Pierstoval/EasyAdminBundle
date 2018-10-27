@@ -141,7 +141,7 @@ class NormalizerConfigPass implements ConfigPassInterface
             foreach (['edit', 'new'] as $action) {
                 $config = $entityConfig[$action];
                 if ($config['dto_class'] && !\class_exists($config['dto_class'] )) {
-                    throw new \InvalidArgumentException(sprintf('The "%s" class defined in the "dto_class" option of the "%s" entity does not exist.', $config['dto_class'], $entityName));
+                    throw new \InvalidArgumentException(\sprintf('The "%s" class defined in the "dto_class" option of the "%s" entity does not exist.', $config['dto_class'], $entityName));
                 }
 
                 if ($config['dto_class'] && !$config['dto_entity_method']) {
@@ -153,25 +153,36 @@ class NormalizerConfigPass implements ConfigPassInterface
 
                 if ($config['dto_class'] && $config['dto_factory'] && '__construct' !== $config['dto_factory']) {
 
-                    $refl = new \ReflectionMethod($config['dto_class'], $config['dto_factory']);
+                    try {
+                        $refl = new \ReflectionMethod($config['dto_class'], $config['dto_factory']);
+                    } catch (\ReflectionException $e) {
+                        $msgToCheck = \sprintf('Method %s::%s does not exist', $config['dto_class'], $config['dto_factory']);
+                        if ($e->getMessage() !== $msgToCheck) {
+                            throw $e;
+                        }
+                        throw new \InvalidArgumentException(\sprintf(
+                            'Method "%s" used as factory for the "%s" entity\'s DTO does not exist. It must be a public and static method.',
+                            $config['dto_class'].'::'.$config['dto_factory'], $entityName
+                        ));
+                    }
 
                     if (!$refl->isStatic()) {
-                        throw new \InvalidArgumentException(sprintf(
-                            'If not using "__construct", the "%s" method used as constructor for the "%s" entity\'s DTO must be static',
+                        throw new \InvalidArgumentException(\sprintf(
+                            'If not using the constructor, the "%s" method used as factory for the "%s" entity\'s DTO must be static.',
                             $config['dto_class'].'::'.$config['dto_factory'], $entityName
                         ));
                     }
                     if (!$refl->isPublic()) {
-                        throw new \InvalidArgumentException(sprintf(
-                            'If not using "__construct", the "%s" method used as constructor for the "%s" entity\'s DTO must be public',
+                        throw new \InvalidArgumentException(\sprintf(
+                            'If not using the constructor, the "%s" method used as factory for the "%s" entity\'s DTO must be public.',
                             $config['dto_class'].'::'.$config['dto_factory'], $entityName
                         ));
                     }
                 }
 
                 if ($config['dto_class'] && $config['dto_entity_method'] && !\method_exists($entityConfig['class'], $config['dto_entity_method'])) {
-                    throw new \InvalidArgumentException(sprintf(
-                        'The "%s" method as mutator for the "%s" entity class does not exist',
+                    throw new \InvalidArgumentException(\sprintf(
+                        'The "%s" method as mutator for the "%s" entity class does not exist.',
                         $entityConfig['class'].'::'.$config['dto_entity_method'], $entityName
                     ));
                 }
