@@ -297,7 +297,7 @@ class AdminController extends Controller
         if ($newForm->isSubmitted() && $newForm->isValid()) {
             if ($dto) {
                 $callable = $this->container->get('easyadmin.dto_entity_callable_storage')->getCallable($this->entity['name'], 'new');
-                $callable($dto, null, 'new');
+                $entity = $callable($dto, null, 'new');
             }
 
             $this->dispatch(EasyAdminEvents::PRE_PERSIST, ['entity' => $entity]);
