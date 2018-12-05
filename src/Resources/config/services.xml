@@ -29,9 +29,13 @@
         <service id="easyadmin.paginator" class="EasyCorp\Bundle\EasyAdminBundle\Search\Paginator" public="true">
         </service>
 
-        <service id="easyadmin.dto_factory" class="EasyCorp\Bundle\EasyAdminBundle\Form\DTO\DTOFactory" public="true">
+        <service id="easyadmin.dto_factory_storage" class="EasyCorp\Bundle\EasyAdminBundle\Form\DTO\DTOFactoryStorage" public="true">
             <argument type="service" id="easyadmin.config.manager" />
             <argument type="service" id="service_container" />
+        </service>
+
+        <service id="easyadmin.dto_entity_callable_storage" class="EasyCorp\Bundle\EasyAdminBundle\Form\DTO\DTOEntityCallableStorage" public="true">
+            <argument type="service" id="easyadmin.config.manager" />
         </service>
 
         <service id="easyadmin.router" class="EasyCorp\Bundle\EasyAdminBundle\Router\EasyAdminRouter" public="true">

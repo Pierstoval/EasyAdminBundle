@@ -11,7 +11,6 @@ use EasyCorp\Bundle\EasyAdminBundle\Exception\ForbiddenActionException;
 use EasyCorp\Bundle\EasyAdminBundle\Exception\NoEntitiesConfiguredException;
 use EasyCorp\Bundle\EasyAdminBundle\Exception\UndefinedEntityException;
 use EasyCorp\Bundle\EasyAdminBundle\Form\Type\EasyAdminFormType;
-use EasyCorp\Bundle\EasyAdminBundle\Form\Util\FormTypeHelper;
 use Pagerfanta\Pagerfanta;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\EventDispatcher\GenericEvent;
@@ -187,7 +186,7 @@ class AdminController extends Controller
         $entity = $easyadmin['item'];
 
         $dto = $this->entity['edit']['dto_class']
-            ? $this->get('easyadmin.dto_factory')->createEntityDTO($this->entity['name'], 'edit', $entity)
+            ? $this->get('easyadmin.dto_factory_storage')->createEntityDTO($this->entity['name'], 'edit', $entity)
             : null;
 
         if ($this->request->isXmlHttpRequest() && $property = $this->request->query->get('property')) {
@@ -216,9 +215,8 @@ class AdminController extends Controller
         $editForm->handleRequest($this->request);
         if ($editForm->isSubmitted() && $editForm->isValid()) {
             if ($dto) {
-                $callable = $this->entity['edit']['dto_entity_method'];
-
-                $entity->$callable($dto);
+                $callable = $this->container->get('easyadmin.dto_entity_callable_storage')->getCallable($this->entity['name'], 'edit');
+                $callable($dto, $entity, 'edit');
             }
 
             $this->dispatch(EasyAdminEvents::PRE_UPDATE, ['entity' => $entity]);
@@ -281,7 +279,7 @@ class AdminController extends Controller
         $this->dispatch(EasyAdminEvents::PRE_NEW);
 
         $dto = $this->entity['new']['dto_class']
-            ? $this->get('easyadmin.dto_factory')->createEntityDTO($this->entity['name'], 'new')
+            ? $this->get('easyadmin.dto_factory_storage')->createEntityDTO($this->entity['name'], 'new')
             : null;
 
         // If using a DTO, entity will be created after form is valid, with the "dto_entity_method" option.
@@ -298,12 +296,8 @@ class AdminController extends Controller
         $newForm->handleRequest($this->request);
         if ($newForm->isSubmitted() && $newForm->isValid()) {
             if ($dto) {
-                $callable = [
-                    $this->entity['class'],
-                    $this->entity['new']['dto_entity_method'],
-                ];
-
-                $entity = $callable($dto);
+                $callable = $this->container->get('easyadmin.dto_entity_callable_storage')->getCallable($this->entity['name'], 'new');
+                $callable($dto, null, 'new');
             }
 
             $this->dispatch(EasyAdminEvents::PRE_PERSIST, ['entity' => $entity]);
@@ -817,5 +811,9 @@ class AdminController extends Controller
     protected function renderTemplate($actionName, $templatePath, array $parameters = [])
     {
         return $this->render($templatePath, $parameters);
+    }
+
+    private function getDTOEntityCallable($callable): callable
+    {
     }
 }

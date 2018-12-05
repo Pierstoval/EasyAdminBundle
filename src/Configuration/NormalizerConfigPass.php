@@ -118,7 +118,7 @@ class NormalizerConfigPass implements ConfigPassInterface
         foreach ($backendConfig['entities'] as $entityName => $entityConfig) {
             $dtoClass = $entityConfig['dto_class'] ?? null;
             $dtoConstructor = $entityConfig['dto_factory'] ?? null;
-            $dtoEntityMethod = $entityConfig['dto_entity_method'] ?? null;
+            $dtoEntityMethod = $entityConfig['dto_entity_callable'] ?? null;
 
             foreach (['edit', 'form', 'new'] as $action) {
                 if (!isset($entityConfig[$action]['dto_class'])) {
@@ -127,8 +127,8 @@ class NormalizerConfigPass implements ConfigPassInterface
                 if (!isset($entityConfig[$action]['dto_factory'])) {
                     $entityConfig[$action]['dto_factory'] = $dtoConstructor;
                 }
-                if (!isset($entityConfig[$action]['dto_entity_method'])) {
-                    $entityConfig[$action]['dto_entity_method'] = $dtoEntityMethod;
+                if (!isset($entityConfig[$action]['dto_entity_callable'])) {
+                    $entityConfig[$action]['dto_entity_callable'] = $dtoEntityMethod;
                 }
             }
 
@@ -144,19 +144,19 @@ class NormalizerConfigPass implements ConfigPassInterface
                     throw new \InvalidArgumentException(\sprintf('The "%s" class defined in the "dto_class" option of the "%s" entity does not exist.', $config['dto_class'], $entityName));
                 }
 
-                if ($config['dto_class'] && !$config['dto_entity_method']) {
+                if ($config['dto_class'] && !$config['dto_entity_callable']) {
                     throw new \InvalidArgumentException(\sprintf(
                         'If you specify the "%s" option, you must also specify the "%s" option in the "%s" entity to know which method EasyAdmin must execute to %s the entity with the DTO.',
-                        'dto_class', 'dto_entity_method', $entityName, $action === 'edit' ? 'update' : 'create'
+                        'dto_class', 'dto_entity_callable', $entityName, $action === 'edit' ? 'update' : 'create'
                     ));
                 }
 
-                if ($config['dto_class'] && $config['dto_factory'] && '__construct' !== $config['dto_factory']) {
-                    if ($this->container->get('easyadmin.dto_factory')->hasFactory($config['dto_factory'])) {
-                        // Don't make any check if factory exists in the container, because it's the first one that's used
-                        continue;
-                    }
-
+                if (
+                    $config['dto_class']
+                    && $config['dto_factory']
+                    && '__construct' !== $config['dto_factory']
+                    && !$this->container->get('easyadmin.dto_factory_storage')->hasFactory($config['dto_factory'])
+                ) {
                     try {
                         $refl = new \ReflectionMethod($config['dto_class'], $config['dto_factory']);
                     } catch (\ReflectionException $e) {
@@ -184,10 +184,14 @@ class NormalizerConfigPass implements ConfigPassInterface
                     }
                 }
 
-                if ($config['dto_class'] && $config['dto_entity_method'] && !\method_exists($entityConfig['class'], $config['dto_entity_method'])) {
+                if (
+                    $config['dto_class']
+                    && $config['dto_entity_callable']
+                    && !$this->container->get('easyadmin.dto_entity_callable_storage')->hasCallable($config['dto_entity_callable'])
+                ) {
                     throw new \InvalidArgumentException(\sprintf(
-                        'The "%s" method as mutator for the "%s" entity class does not exist.',
-                        $entityConfig['class'].'::'.$config['dto_entity_method'], $entityName
+                        'The "%s" method as entity callable for the "%s" entity class does not exist.',
+                        $config['dto_entity_callable'], $entityName
                     ));
                 }
             }

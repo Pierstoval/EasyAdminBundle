@@ -6,8 +6,8 @@ use AppTestBundle\Entity\UnitTests\Product;
 use AppTestBundle\Form\DTO\EditProductDTO;
 use AppTestBundle\Form\DTO\NewProductDTO;
 use EasyCorp\Bundle\EasyAdminBundle\Configuration\ConfigManager;
-use EasyCorp\Bundle\EasyAdminBundle\Form\DTO\DTOFactory;
-use EasyCorp\Bundle\EasyAdminBundle\Form\DTO\ObjectFactoryInterface;
+use EasyCorp\Bundle\EasyAdminBundle\Form\DTO\DTOFactoryStorage;
+use EasyCorp\Bundle\EasyAdminBundle\Form\DTO\DTOFactoryInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -22,7 +22,7 @@ class DTOFactoryTest extends TestCase
     {
         $container = $this->createMock(ContainerInterface::class);
 
-        $factory = new DTOFactory($this->getConfigManager($configParams), $container);
+        $factory = new DTOFactoryStorage($this->getConfigManager($configParams), $container);
 
         $dto = $factory->createEntityDTO('Product', $action, $defaultData);
 
@@ -72,7 +72,7 @@ class DTOFactoryTest extends TestCase
 
     public function testNewDTOCreationFromContainer()
     {
-        $serviceFactory = $this->createMock(ObjectFactoryInterface::class);
+        $serviceFactory = $this->createMock(DTOFactoryInterface::class);
         $serviceFactory
             ->expects($this->once())
             ->method('getName')
@@ -88,7 +88,7 @@ class DTOFactoryTest extends TestCase
 
         $configParams = ['new' => ['dto_class' => EditProductDTO::class, 'dto_factory' => 'test_factory']];
 
-        $factory = new DTOFactory($this->getConfigManager($configParams));
+        $factory = new DTOFactoryStorage($this->getConfigManager($configParams));
         $factory->addFactory($serviceFactory);
 
         $dto = $factory->createEntityDTO('Product', 'new');
@@ -100,7 +100,7 @@ class DTOFactoryTest extends TestCase
     {
         $defaultData = new Product();
 
-        $serviceFactory = $this->createMock(ObjectFactoryInterface::class);
+        $serviceFactory = $this->createMock(DTOFactoryInterface::class);
         $serviceFactory
             ->expects($this->once())
             ->method('getName')
@@ -116,7 +116,7 @@ class DTOFactoryTest extends TestCase
 
         $configParams = ['edit' => ['dto_class' => EditProductDTO::class, 'dto_factory' => 'test_factory']];
 
-        $factory = new DTOFactory($this->getConfigManager($configParams));
+        $factory = new DTOFactoryStorage($this->getConfigManager($configParams));
         $factory->addFactory($serviceFactory);
 
         $dto = $factory->createEntityDTO('Product', 'edit', $defaultData);
@@ -132,7 +132,7 @@ class DTOFactoryTest extends TestCase
     {
         $container = $this->createMock(ContainerInterface::class);
 
-        $factory = new DTOFactory($this->getConfigManager([
+        $factory = new DTOFactoryStorage($this->getConfigManager([
             'new' => [
                 'dto_factory' => 'inexistent_class::inexistent_method',
             ],
@@ -152,12 +152,12 @@ class DTOFactoryTest extends TestCase
                             'fields' => [],
                             'dto_class' => NewProductDTO::class,
                             'dto_factory' => null,
-                            'dto_entity_method' => null,
+                            'dto_entity_callable' => null,
                         ],
                         'edit' => [
                             'dto_class' => EditProductDTO::class,
                             'dto_factory' => null,
-                            'dto_entity_method' => null,
+                            'dto_entity_callable' => null,
                         ],
                     ], $entityConfig
                 ),

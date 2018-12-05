@@ -2,8 +2,9 @@
 
 namespace EasyCorp\Bundle\EasyAdminBundle\DependencyInjection;
 
-use EasyCorp\Bundle\EasyAdminBundle\DependencyInjection\Compiler\EasyAdminDTOFactoriesPass;
-use EasyCorp\Bundle\EasyAdminBundle\Form\DTO\ObjectFactoryInterface;
+use EasyCorp\Bundle\EasyAdminBundle\DependencyInjection\Compiler\EasyAdminDTOConfigPass;
+use EasyCorp\Bundle\EasyAdminBundle\Form\DTO\DTOEntityCallable;
+use EasyCorp\Bundle\EasyAdminBundle\Form\DTO\DTOFactoryInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
@@ -43,7 +44,8 @@ class EasyAdminExtension extends Extension
                 ->replaceArgument(0, $container->getParameter('locale'));
         }
 
-        $container->registerForAutoconfiguration(ObjectFactoryInterface::class)->addTag(EasyAdminDTOFactoriesPass::OBJECT_FACTORY_TAG);
+        $container->registerForAutoconfiguration(DTOFactoryInterface::class)->addTag(EasyAdminDTOConfigPass::OBJECT_FACTORY_TAG);
+        $container->registerForAutoconfiguration(DTOEntityCallable::class)->addTag(EasyAdminDTOConfigPass::OBJECT_CALLABLE_TAG);
     }
 
     /**

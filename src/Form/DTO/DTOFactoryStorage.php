@@ -4,37 +4,28 @@ namespace EasyCorp\Bundle\EasyAdminBundle\Form\DTO;
 
 use EasyCorp\Bundle\EasyAdminBundle\Configuration\ConfigManager;
 
-final class DTOFactory
+final class DTOFactoryStorage
 {
     private $configManager;
 
     /**
-     * @var ObjectFactoryInterface[]
+     * @var DTOFactoryInterface[]
      */
-    private $factories;
+    private $factories = [];
 
     public function __construct(ConfigManager $configManager)
     {
         $this->configManager = $configManager;
     }
 
-    public function addFactory(ObjectFactoryInterface $objectFactory): void
+    public function addFactory(string $serviceName, DTOFactoryInterface $objectFactory): void
     {
-        $factoryName = $objectFactory->getName();
-
-        if (isset($this->factories[$factoryName])) {
-            throw new \InvalidArgumentException(sprintf(
-                'Object factory with name "%s" already exists. You cannot set two object factories with the same name.',
-                $factoryName
-            ));
-        }
-
-        $this->factories[$factoryName] = $objectFactory;
+        $this->factories[$serviceName] = $objectFactory;
     }
 
-    public function hasFactory(string $name): bool
+    public function hasFactory(string $serviceName): bool
     {
-        return \array_key_exists($name, $this->factories);
+        return isset($this->factories[$serviceName]);
     }
 
     public function createEntityDTO(string $entityName, string $view, $entityObject = null)
@@ -44,10 +35,8 @@ final class DTOFactory
         $dtoClass = $entityConfig[$view]['dto_class'];
         $factory = $entityConfig[$view]['dto_factory'];
 
-        $serviceFactory = $this->factories[$factory] ?? null;
-
-        if (null !== $serviceFactory) {
-            return $serviceFactory->createDTO($dtoClass, $view, $entityObject);
+        if ($this->hasFactory($factory)) {
+            return $this->factories[$factory]->createDTO($dtoClass, $view, $entityObject);
         }
 
         if (null === $factory || '__construct' === $factory) {

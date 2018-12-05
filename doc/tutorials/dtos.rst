@@ -192,13 +192,13 @@ EasyAdmin to use your DTOs:
 
                 new:
                     dto_class: App\Form\DTO\NewUserAdminDTO
-                    dto_entity_method: createFromAdmin
+                    dto_entity_callable: createFromAdmin
                     # Default DTO factory is the native constructor, so we don't specify it here.
 
                 edit:
                     dto_class: App\Form\DTO\ExistingUserAdminDTO
                     dto_factory: fromUser
-                    dto_entity_method: updateFromAdmin
+                    dto_entity_callable: updateFromAdmin
 
                     # You define fields as the DTO fields instead of the Entity one.
                     fields:
@@ -222,17 +222,42 @@ DTO configuration options
   * The **static method name** that will be used to create the DTO, like
     ``$dtoClass:$dtoFactory()``.
   * A **static factory** from another class like ``'MyDTOFactory::createDTO'``.
-  * The name of an object factory registered as a service (see below an example of object
-    factory).
-* ``dto_entity_method``: This is the **method** that will be used by EasyAdmin
-  when the form is **submitted and valid**, on the **entity**. This can execute
-  instructions like ``$entity->$method($dto);``. This method is mandatory if you
-  want to use DTOs.
+  * The **service name** of a factory registered as a service (see below an example of
+    object factory). It must implement ``EasyCorp\Bundle\EasyAdminBundle\Form\DTO\DTOFactoryInterface``
+    and be tagged ``easyadmin.dto_factory_storage``.
+* ``dto_entity_callable``: This is the **callable** that will be used by EasyAdmin
+  when the form is **submitted and valid**, to put DTO data into the entity.
+  It can also be of different types:
+  * A **service name** that will be retrieved from the container and executed like this:
+    ``$myService->updateEntity($dto, $entity, $action);`` (see below for a service callable example).
+    The service class must implement ``EasyCorp\Bundle\EasyAdminBundle\Form\DTO\DTOEntityCallable``
+    and be tagged ``easyadmin.dto_entity_callable``, for proper dependency injection.
+  * A **static method** that will execute a statement similar to ``$class::$method($dto, $entity);``.
+    It can even be a static method from the entity itself, if you need **private** access to
+    certain properties or methods, or if you want to customize Entity creation based on the DTO.
+  * A simple ``method name`` in the entity class. This will execute a statement like
+    ``$entity->$method($dto);``.
+  ⚠️ **If the callable returns anything**, it will **replace** the previously created/retrieved
+  ``$entity``. This is done on purpose, in case you want to customize entity creation in the
+  ``new`` action, or in case you clone or create a new object in ``edit`` action.
 
-Create custom object factories
-------------------------------
+.. best-practice::
 
-Thanks to the ``EasyCorp\Bundle\EasyAdminBundle\Form\DTO\ObjectFactoryInterface``, you can
+    For ``dto_factory``, we recommend using a **static constructor in the DTO** itself.
+    This way, the DTO can store private properties and encapsulate them with getters, making
+    it a value-object, which is really interesting to avoid it being updated from the userland.
+    Then, a DTO can be always valid (as it's validated by the Form), therefore safe for your entities.
+
+.. best-practice::
+
+    For ``dto_entity_callable``, we recommend using an **entity method** such as ``$entity->$method($dto)``.
+    This helps the entity update itself and **remove all setters**. The only way an entity can be updated
+    then becomes the use of a DTO, which is a good practice.
+
+Create a custom DTO factory
+---------------------------
+
+Thanks to the ``EasyCorp\Bundle\EasyAdminBundle\Form\DTO\DTOFactoryInterface``, you can
 create services that will create your DTOs.
 
 Here is an example of such factory:
@@ -241,15 +266,10 @@ Here is an example of such factory:
 
     <?php
 
-    use EasyCorp\Bundle\EasyAdminBundle\Form\DTO\ObjectFactoryInterface;
+    use EasyCorp\Bundle\EasyAdminBundle\Form\DTO\DTOFactoryInterface;
 
-    class CustomObjectFactory implements ObjectFactoryInterface
+    class CustomObjectFactory implements DTOFactoryInterface
     {
-        public function getName(): string
-        {
-            return 'custom_factory';
-        }
-
         public function createDTO(string $class, string $view, $defaultData = null)
         {
             // Your logic to create the DTO.
@@ -266,6 +286,89 @@ Used with a configuration similar to this:
                 class: App\Entity\User
 
                 edit:
-                    # Here, the custom factory is used, and the name is the return of CustomObjectFactory::getName().
-                    dto_factory: custom_factory
                     dto_class: App\Form\DTO\ExistingUserAdminDTO
+
+                    # Old-fashioned service name
+                    dto_factory: app.dto_factory.custom_factory
+
+                    # Symfony 3.3+: class name as service id
+                    dto_factory: App\Form\DTOFactory\CustomObjectFactory
+
+Create a custom DTO-to-Entity callable
+--------------------------------------
+
+As the ``dto_entity_callable`` can accept different types of values, here are
+examples that you might get inspiration from for your projects:
+
+.. code-block:: yaml
+
+    easy_admin:
+        entities:
+            User:
+                class: App\Entity\User
+
+                new:
+                    # Will execute $entity->updateFromDTO($dto)
+                    dto_entity_callable: updateFromDTO
+
+                    # Will execute static method Any\Other\Class::createFromDTO($dto)
+                    dto_entity_callable: Any\Other\Class::createFromDTO
+
+                    # Of course, you can use the entity one:
+                    # Will execute static method App\Entity\User::createFromDTO($dto)
+                    dto_entity_callable: App\Entity\User::createFromDTO
+
+                    # Container-based callables:
+                    # (The service must be tagged "easyadmin.dto_entity_callable" or implement DTOEntityCallable)
+
+                    dto_entity_callable: App\Form\MyCallable
+
+                    # For plain-old services that do not use the class name as service id
+                    dto_entity_callable: my_service
+
+Here is an example of a working config & callable:
+
+.. code-block:: yaml
+
+    easy_admin:
+        entities:
+            User:
+                class: App\Entity\User
+
+                edit:
+                    dto_class: App\Form\DTO\ExistingUserAdminDTO
+                    dto_entity_callable: App\Form\DTO\ExistingUserDTOCallable
+
+.. code-block:: php
+
+    <?php
+
+    namespace App\Form\DTO;
+
+    use App\Entity\User;
+    use App\Form\DTO\ExistingUserAdminDTO;
+    use EasyCorp\Bundle\EasyAdminBundle\Form\DTO\DTOEntityCallable;
+
+    class ExistingUserDTOCallable implements DTOEntityCallable
+    {
+        /**
+         * {@inheritdoc}
+         */
+        public function updateEntity($dto, $entity, string $action)
+        {
+            if ('new' === $action) {
+                $this->new($dto, $entity);
+            } elseif ('edit' === $action) {
+                $this->edit($dto, $entity);
+            }
+        }
+
+        /**
+         * Using a private method like this forces DTO and entity types.
+         * This is helpful for self-documenting DTO-related code and for debugging.
+         */
+        private function edit(ExistingUserAdminDTO $DTO, User $user)
+        {
+            // ... your logic
+        }
+    }
