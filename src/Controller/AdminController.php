@@ -216,7 +216,11 @@ class AdminController extends Controller
         if ($editForm->isSubmitted() && $editForm->isValid()) {
             if ($dto) {
                 $callable = $this->container->get('easyadmin.dto_entity_callable_storage')->getCallable($this->entity['name'], 'edit');
-                $callable($dto, $entity, 'edit');
+                $returnedValue = $callable($dto, $entity, 'edit');
+                // if the callable returns an entity, replace the previous entity with it
+                if (\is_object($returnedValue) && \get_class($returnedValue) === \get_class($entity)) {
+                    $entity = $returnedValue;
+                }
             }
 
             $this->dispatch(EasyAdminEvents::PRE_UPDATE, ['entity' => $entity]);
