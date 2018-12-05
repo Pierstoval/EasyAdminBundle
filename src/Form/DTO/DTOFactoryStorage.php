@@ -23,7 +23,7 @@ final class DTOFactoryStorage
         $this->factories[$serviceName] = $objectFactory;
     }
 
-    public function hasFactory(string $serviceName): bool
+    public function hasFactory(?string $serviceName): bool
     {
         return isset($this->factories[$serviceName]);
     }
@@ -54,7 +54,7 @@ final class DTOFactoryStorage
             return $factory($entityObject);
         }
 
-        throw new \InvalidArgumentException(sprintf(
+        throw new \InvalidArgumentException(\sprintf(
         'Could not find a way to create a DTO for entity %s with configured factory %s.',
             $entityName, $factory
         ));
