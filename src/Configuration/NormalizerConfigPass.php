@@ -189,10 +189,25 @@ class NormalizerConfigPass implements ConfigPassInterface
                     && $config['dto_entity_callable']
                     && !$this->container->get('easyadmin.dto_entity_callable_storage')->hasCallable($config['dto_entity_callable'])
                 ) {
-                    throw new \InvalidArgumentException(\sprintf(
-                        'The "%s" method as entity callable for the "%s" entity class does not exist.',
-                        $config['dto_entity_callable'], $entityName
-                    ));
+                    try {
+                        $refl = new \ReflectionMethod($config['dto_entity_callable']);
+                    } catch (\ReflectionException $e) {
+                        $msgToCheck = \sprintf('Class %s does not exist', \strtok($config['dto_entity_callable'], "::"));
+                        if ($e->getMessage() !== $msgToCheck) {
+                            throw $e;
+                        }
+                        throw new \InvalidArgumentException(\sprintf(
+                            'Method "%s" used as DTO-to-entity callable for the "%s" entity\'s DTO does not exist. It must be a public and static method.',
+                            $config['dto_entity_callable'], $entityName
+                        ));
+                    }
+
+                    if (!$refl->isStatic()) {
+                        throw new \InvalidArgumentException(\sprintf(
+                            'If not using a service DTO-to-entity callable, the "%s" method used as callable for the "%s" entity\'s DTO must be static.',
+                            $config['dto_entity_callable'], $entityName
+                        ));
+                    }
                 }
             }
         }
