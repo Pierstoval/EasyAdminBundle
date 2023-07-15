@@ -130,6 +130,9 @@ class Form {
                 setTimeout(() => {
                     const submitButtons = document.querySelector('.ea-edit, .ea-new').querySelectorAll('[type="submit"]');
                     submitButtons.forEach((button) => {
+                        if (button.hasAttribute('data-allow-multiple-submit')) {
+                            return;
+                        }
                         button.setAttribute('disabled', 'disabled');
                     });
                 }, 1);
